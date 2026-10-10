@@ -1,0 +1,70 @@
+name: TaskPilot CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci --prefix backend && npm ci --prefix frontend
+      - name: Lint
+        run: npm run lint
+      - name: Backend integration tests and OpenAPI validation
+        run: npm test
+      - name: Build frontend
+        run: npm run build --prefix frontend
+      - name: Smoke test production server with temporary MongoDB
+        run: npm run smoke:local
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Browser tests
+        run: npm run test:e2e
+      - name: Upload failure traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: frontend/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Generate local container settings
+        run: npm run docker:setup
+      - name: Validate Compose
+        run: docker compose --env-file .env.docker config --quiet
+      - name: Build and start containers
+        run: docker compose --env-file .env.docker up --build --wait --wait-timeout 180
+      - name: Smoke test containerized application
+        run: node scripts/smoke-demo.mjs
+      - name: Container logs
+        if: failure()
+        run: docker compose --env-file .env.docker logs --no-color
+      - name: Stop test containers
+        if: always()
+        run: docker compose --env-file .env.docker down --volumes

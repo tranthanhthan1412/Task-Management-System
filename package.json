@@ -1,0 +1,32 @@
+{
+  "name": "taskpilot",
+  "version": "1.0.0",
+  "description": "TaskPilot - quan ly cong viec ca nhan voi Kanban, React va Express",
+  "private": true,
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "build": "npm ci --prefix backend --include=dev && npm ci --prefix frontend --include=dev && npm run build --prefix frontend",
+    "start": "npm run start --prefix backend",
+    "test": "npm test --prefix backend",
+    "test:e2e": "npm run test:e2e --prefix frontend",
+    "lint": "npm run lint --prefix frontend",
+    "check": "npm run lint && npm test && npm run build --prefix frontend && npm run smoke:local && npm run test:e2e",
+    "smoke:local": "node backend/scripts/smoke-production.js",
+    "smoke:demo": "node scripts/smoke-demo.mjs",
+    "docker:setup": "node scripts/setup-docker.mjs",
+    "docker:up": "npm run docker:setup && docker compose --env-file .env.docker up --build --wait --wait-timeout 180",
+    "docker:down": "docker compose --env-file .env.docker down"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tranthanhthan1412/TaskPilot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/tranthanhthan1412/TaskPilot/issues"
+  },
+  "homepage": "https://github.com/tranthanhthan1412/TaskPilot#readme"
+}
