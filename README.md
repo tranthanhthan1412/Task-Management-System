@@ -2,6 +2,8 @@
 
 Ứng dụng quản lý công việc cá nhân, xây dựng trên project MERN hiện có.
 
+> 🎬 **Video Demo (3–5 phút)**: [Xem video demo trên Google Drive](https://drive.google.com/file/d/1HLK5Nbd-QZ-ssPTwxr-g9TQ3SSet9RFX/view?usp=drive_link)
+
 ## Tính năng
 
 - Đổi tên giao diện, tiêu đề trình duyệt và package thành TaskPilot.
@@ -411,6 +413,7 @@ Không tự gán task cho người đầu tiên đăng ký.
 | Seed dữ liệu mẫu | `npm run seed --prefix backend`; 1 user demo + 15 tasks đủ trạng thái/priority/dueDate |
 | Migration dữ liệu cũ | `migrate:ownership` và `migrate:tasks`; có backup, có lịch sử, chạy lại an toàn |
 | Cấu hình deploy | `render.yaml` Blueprint cho Render; auto-deploy khi CI xanh |
+| Video demo | [Xem video demo Google Drive](https://drive.google.com/file/d/1HLK5Nbd-QZ-ssPTwxr-g9TQ3SSet9RFX/view?usp=drive_link) (3–5 phút) |
 
 ### Chức năng chưa hoàn thành
 
@@ -425,7 +428,6 @@ Không tự gán task cho người đầu tiên đăng ký.
 | TypeScript | Toàn bộ backend và frontend dùng JavaScript; không có type safety tĩnh |
 | Refresh token | Phiên hết hạn sau `JWT_EXPIRES_IN`; không có silent refresh — cần đăng nhập lại |
 | Phân trang Kanban | Kanban trả toàn bộ task phù hợp; có thể chậm khi dữ liệu rất lớn |
-| Video demo | Chưa có file video; cần quay và đính kèm link (Loom hoặc YouTube) |
 
 ### Kiểm tra local (10/10/2026, Windows, Node.js 24.19.0)
 
