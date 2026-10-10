@@ -356,7 +356,28 @@ Script kiểm tra HTML/bundle, route `/tasks`, health, Swagger, đăng ký/đăn
 
 Khi cần quay lại phiên bản cũ, chọn một deploy đã thành công trong Render và rollback; không xóa database. Xem [hướng dẫn deploy/rollback của Render](https://render.com/docs/deploys).
 
-## Migration dữ liệu cũ
+## Seed dữ liệu mẫu
+
+Script tạo một tài khoản demo và 15 task mẫu phân bố đều ba trạng thái, đa dạng về priority và dueDate (quá hạn, hôm nay, tương lai, không có hạn).
+
+~~~powershell
+npm run seed --prefix backend
+~~~
+
+Thông tin đăng nhập sau khi seed:
+
+| Trường   | Giá trị              |
+| -------- | -------------------- |
+| Email    | demo@taskpilot.dev   |
+| Password | Demo@12345           |
+
+Chạy lại seed an toàn: task cũ của tài khoản demo bị xóa trước khi tạo lại; tài khoản không bị trùng lặp.
+
+~~~powershell
+npm run seed:clear --prefix backend   # Xóa tài khoản demo và toàn bộ task mẫu
+~~~
+
+Không seed lên database production. Tài khoản demo dùng mật khẩu cố định, chỉ phù hợp cho môi trường development/demo local.
 
 Task thiếu `userId` không hiện cho user nào trước khi migration.
 Database mới không cần migration. Với dữ liệu cũ, backup database và dừng API ghi trước khi chạy; dùng đúng cấu hình của database cần chuyển đổi.
@@ -372,11 +393,47 @@ Không tự gán task cho người đầu tiên đăng ký.
 
 ## Trạng thái bàn giao
 
-- Kiểm tra local ngày 10/10/2026 trên Windows, Node.js 24.19.0: lint, build frontend, 15 test backend, 5 E2E trên Edge và smoke production với MongoDB tạm đều pass. Manifest khớp lockfile; các import frontend đều trỏ tới file còn tồn tại.
-- Code có Kanban, Docker Compose, API test, Swagger/OpenAPI, CI và cấu hình Render.
-- Chưa chạy CI trên GitHub ở lần rà soát này vì bản code local chưa được push.
-- Chưa có URL demo được xác minh. Chỉ coi phần deploy hoàn tất sau khi CI trên GitHub pass, Render healthy và smoke test trên URL thật pass.
-- Docker cần được xác minh trên máy có Docker Engine hoặc qua job `docker`; bộ smoke production local không thay thế việc build/chạy container.
+### Chức năng đã hoàn thành
+
+| Chức năng | Chi tiết |
+| --- | --- |
+| Xác thực người dùng | Đăng ký, đăng nhập, đăng xuất; JWT trong cookie HttpOnly, SameSite=Lax; phiên lưu MongoDB |
+| Bảo mật | bcrypt cost 12, CSRF header check, rate limit 30 req/15 phút, helmet, CORS cấu hình |
+| CRUD task | Tạo, đọc, cập nhật (PATCH/PUT), xóa; đầy đủ title/description/status/priority/dueDate |
+| Kanban + kéo thả | Ba cột TODO/IN\_PROGRESS/DONE; kéo chuột và bàn phím; rollback khi API thất bại |
+| Phân trang server-side | Phân trang, tìm kiếm tiêu đề, lọc trạng thái/ưu tiên/khoảng ngày tạo |
+| Dashboard | Counts theo trạng thái, task sắp đến hạn và quá hạn (tối đa 5 mỗi nhóm) |
+| Swagger / OpenAPI | Đặc tả OpenAPI 3.0 đầy đủ, Try it out hỗ trợ cookie; JSON tại `/api/openapi.json` |
+| Integration test | 8 test suite, 15 assertion nhóm; MongoDB in-memory; bao phủ auth, CRUD, CSRF, phân quyền |
+| E2E test | 5 kịch bản Playwright: kéo thả, rollback, phân quyền, mobile 390px, tìm kiếm/phân trang |
+| Docker Compose | App + MongoDB 8.0, healthcheck, volume persistent, image multi-stage |
+| CI GitHub Actions | Lint → backend test → build → smoke → E2E → Docker validate; upload trace khi fail |
+| Seed dữ liệu mẫu | `npm run seed --prefix backend`; 1 user demo + 15 tasks đủ trạng thái/priority/dueDate |
+| Migration dữ liệu cũ | `migrate:ownership` và `migrate:tasks`; có backup, có lịch sử, chạy lại an toàn |
+| Cấu hình deploy | `render.yaml` Blueprint cho Render; auto-deploy khi CI xanh |
+
+### Chức năng chưa hoàn thành
+
+| Chức năng | Lý do / ghi chú |
+| --- | --- |
+| URL demo được xác minh | Deploy Render chưa thành công (lỗi `MongooseServerSelectionError` — cần whitelist IP Atlas) |
+| Biểu đồ thống kê | Không có chart tiến độ theo tuần/tháng; dashboard chỉ có số đếm và danh sách |
+| Nhãn / tag task | Không có hệ thống nhãn; lọc chỉ theo status/priority/date |
+| Thông báo / nhắc nhở | Không có push notification, email reminder hay in-app alert khi task sắp đến hạn |
+| Tìm kiếm nâng cao | Chỉ tìm theo tiêu đề; không hỗ trợ tìm theo mô tả, dueDate hoặc full-text search |
+| Chia sẻ / cộng tác | Mỗi task thuộc một user; không có workspace chung hay phân công task cho người khác |
+| TypeScript | Toàn bộ backend và frontend dùng JavaScript; không có type safety tĩnh |
+| Refresh token | Phiên hết hạn sau `JWT_EXPIRES_IN`; không có silent refresh — cần đăng nhập lại |
+| Phân trang Kanban | Kanban trả toàn bộ task phù hợp; có thể chậm khi dữ liệu rất lớn |
+| Video demo | Chưa có file video; cần quay và đính kèm link (Loom hoặc YouTube) |
+
+### Kiểm tra local (10/10/2026, Windows, Node.js 24.19.0)
+
+- Lint, build frontend, 15 test backend, 5 E2E trên Edge và smoke production với MongoDB tạm đều pass.
+- Manifest khớp lockfile; các import frontend đều trỏ tới file còn tồn tại.
+- CI trên GitHub chưa được xác minh ở lần rà soát này (code local chưa push).
+- Docker cần được xác minh trên máy có Docker Engine hoặc qua job `docker` trong CI.
+
 
 ## Tài liệu tham khảo
 

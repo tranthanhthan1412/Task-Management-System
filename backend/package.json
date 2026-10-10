@@ -8,7 +8,9 @@
     "start": "node src/server.js",
     "test": "node --test --test-concurrency=1 test/*.test.js",
     "migrate:ownership": "node scripts/migrate-ownership.js",
-    "migrate:tasks": "node scripts/migrate-task-fields.js"
+    "migrate:tasks": "node scripts/migrate-task-fields.js",
+    "seed": "node scripts/seed.js",
+    "seed:clear": "node scripts/seed.js clear"
   },
   "keywords": [],
   "author": "",
